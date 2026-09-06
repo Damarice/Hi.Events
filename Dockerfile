@@ -29,6 +29,7 @@ RUN apk add --no-cache nodejs yarn nginx supervisor dos2unix
 COPY --from=node-frontend /app/frontend /app/frontend
 
 COPY ./backend /app/backend
+COPY ./backend/.env /app/backend/.env
 COPY ./VERSION /app/backend/VERSION
 RUN mkdir -p /app/backend/bootstrap/cache \
     && mkdir -p /app/backend/storage \

@@ -14,19 +14,38 @@ services:
         value: "production"
       - key: LOG_CHANNEL
         value: "stack"
-      - key: DATABASE_URL
-        fromDatabase:
-          name: postgres
-          property: connectionString
       - key: MAIL_MAILER
         value: "log"
-      - key: REDIS_URL
+      - key: DB_CONNECTION
+        value: "pgsql"
+      - key: DB_HOST
+        fromDatabase:
+          name: postgres
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: postgres
+          property: port
+      - key: DB_DATABASE
+        fromDatabase:
+          name: postgres
+          property: database
+      - key: DB_USERNAME
+        fromDatabase:
+          name: postgres
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: postgres
+          property: password
+      - key: REDIS_HOST
         fromService:
           name: redis
-          property: connectionString
-    routes:
-      - path: /
-        matchType: prefix
+          property: host
+      - key: REDIS_PORT
+        fromService:
+          name: redis
+          property: port
 
 databases:
   - name: postgres
@@ -35,4 +54,3 @@ databases:
 
   - name: redis
     plan: free
-    version: "7"
