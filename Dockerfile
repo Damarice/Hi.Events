@@ -29,6 +29,7 @@ RUN apk add --no-cache nodejs yarn nginx supervisor dos2unix
 COPY --from=node-frontend /app/frontend /app/frontend
 
 COPY ./backend /app/backend
+COPY ./backend/.env /app/backend/.env
 COPY ./VERSION /app/backend/VERSION
 RUN mkdir -p /app/backend/bootstrap/cache \
     && mkdir -p /app/backend/storage \
@@ -48,6 +49,7 @@ COPY ./docker/all-in-one/nginx/nginx.conf /etc/nginx/nginx.conf
 COPY ./docker/all-in-one/supervisor/supervisord.conf /etc/supervisord.conf
 
 COPY ./docker/all-in-one/scripts/startup.sh /startup.sh
+COPY ./startup-render.sh /startup.sh
 RUN dos2unix /startup.sh && chmod +x /startup.sh
 
 EXPOSE 80

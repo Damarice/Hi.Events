@@ -46,11 +46,19 @@ services:
         fromService:
           name: redis
           property: port
+      - key: REDIS_PASSWORD
+        value: ""
+      - key: CACHE_DRIVER
+        value: "redis"
+      - key: QUEUE_CONNECTION
+        value: "redis"
 
 databases:
   - name: postgres
     plan: free
     version: "15"
+    ipAllowList: []
 
   - name: redis
     plan: free
+    ipAllowList: []
