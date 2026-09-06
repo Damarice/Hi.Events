@@ -2,11 +2,7 @@ services:
   - type: web
     name: hi-events
     runtime: docker
-    dockerfilePath: ./Dockerfile.all-in-one
-    buildCommand: docker build -f Dockerfile.all-in-one -t hi-events:latest .
-    startCommand: /app/scripts/startup.sh
     plan: free
-    numInstances: 1
     envVars:
       - key: APP_KEY
         generateValue: true
@@ -32,13 +28,11 @@ services:
       - path: /
         matchType: prefix
 
-  - type: pserv
-    name: postgres
-    runtime: postgres15
+databases:
+  - name: postgres
     plan: free
-    ipAllowList: []
+    version: "15"
 
-  - type: redis
-    name: redis
+  - name: redis
     plan: free
-    ipAllowList: []
+    version: "7"
