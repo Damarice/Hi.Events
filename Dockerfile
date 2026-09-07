@@ -27,14 +27,7 @@ RUN echo "Installing frontend dependencies..." && \
     yarn install --network-timeout 600000 && \
     echo "✓ Frontend dependencies installed" && \
     echo "Building frontend..." && \
-    ./node_modules/.bin/lingui extract && \
-    echo "✓ Messages extracted" && \
-    ./node_modules/.bin/lingui compile && \
-    echo "✓ Messages compiled" && \
-    ./node_modules/.bin/vite build --ssrManifest --outDir dist/client && \
-    echo "✓ Client bundle built" && \
-    ./node_modules/.bin/vite build --ssr src/entry.server.tsx --outDir dist/server && \
-    echo "✓ Server bundle built" && \
+    yarn build && \
     echo "✓ Frontend build completed successfully" && \
     if [ -d "dist" ]; then \
         echo "✓ dist folder found"; \
