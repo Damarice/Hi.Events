@@ -44,6 +44,10 @@ else
             else
                 echo "⚠️  Migrations had issues but continuing startup..."
             fi
+            
+            echo ""
+            echo "Creating super admin accounts..."
+            php artisan setup:create-super-admins
             break
         fi
         
