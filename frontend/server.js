@@ -82,7 +82,20 @@ async function main() {
         app.use(vite.middlewares);
     } else {
         app.use(compression());
-        app.use(base, sirv(path.join(__dirname, "./dist/client"), { extensions: [] }));
+        // Serve static assets with proper MIME types and caching
+        app.use(base, sirv(path.join(__dirname, "./dist/client"), { 
+            extensions: ['js', 'css', 'json', 'svg', 'png', 'jpg', 'jpeg', 'gif', 'webp', 'woff', 'woff2', 'ttf', 'eot'],
+            maxAge: 31536000, // 1 year for hashed assets
+            immutable: true,
+            dev: false,
+            etag: false,
+        }));
+        // Also serve from public folder for non-hashed assets
+        app.use(sirv(path.join(__dirname, "./public"), { 
+            extensions: [],
+            maxAge: 3600, // 1 hour
+            dev: false,
+        }));
     }
 
     const getViteEnvironmentVariables = () => {
