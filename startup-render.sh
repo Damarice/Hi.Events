@@ -5,86 +5,58 @@ cd /app/backend
 echo "============================================"
 echo "🚀 Hi.Events Startup Script"
 echo "============================================"
-
-# Print environment info for debugging
 echo ""
-echo "Database Configuration:"
+
+# Load environment
+export $(cat /app/backend/.env 2>/dev/null | grep -v '#' | xargs) 2>/dev/null || true
+
+echo "Configuration:"
+echo "  APP_ENV: ${APP_ENV:-not set}"
+echo "  APP_DEBUG: ${APP_DEBUG:-not set}"
 echo "  DB_CONNECTION: ${DB_CONNECTION:-not set}"
-echo "  DB_HOST: ${DB_HOST:-not set}"
-echo "  DB_PORT: ${DB_PORT:-not set}"
-echo "  DB_DATABASE: ${DB_DATABASE:-not set}"
-echo "  DB_USERNAME: ${DB_USERNAME:-not set}"
+echo "  JWT_SECRET set: $([ -z "$JWT_SECRET" ] && echo 'NO' || echo 'YES')"
+echo "  APP_SAAS_MODE_ENABLED: ${APP_SAAS_MODE_ENABLED:-not set}"
 echo ""
 
-echo "JWT Configuration:"
-echo "  JWT_ALGO: ${JWT_ALGO:-not set}"
-echo "  JWT_SECRET: $([ -z "$JWT_SECRET" ] && echo 'not set' || echo 'SET')"
-echo "  JWT_TTL: ${JWT_TTL:-not set}"
-echo ""
-
-# Check if database variables are set
-if [ -z "$DB_HOST" ] || [ -z "$DB_DATABASE" ]; then
-    echo "⚠️  Database environment variables not configured!"
-    echo "Please set the following environment variables in Render:"
-    echo "  - DB_HOST"
-    echo "  - DB_PORT"
-    echo "  - DB_DATABASE"
-    echo "  - DB_USERNAME"
-    echo "  - DB_PASSWORD"
-    echo ""
-    echo "For now, starting app without database migrations..."
-else
-    echo "✓ Database variables detected, attempting connection..."
-    
-    # Wait for database to be available (up to 60 seconds)
-    echo ""
-    echo "Waiting for database to be ready..."
-    for i in $(seq 1 60); do
+# Try to verify database connection
+if [ -n "$DB_HOST" ] && [ -n "$DB_DATABASE" ]; then
+    echo "Database host detected. Waiting for database..."
+    COUNTER=0
+    while [ $COUNTER -lt 60 ]; do
         if php artisan db:show > /dev/null 2>&1; then
-            echo "✓ Database is ready!"
-            
+            echo "✓ Database is ready"
             echo ""
+            
             echo "Running migrations..."
-            if php artisan migrate --force 2>&1; then
-                echo "✓ Migrations completed successfully"
-            else
-                echo "⚠️  Migrations had issues but continuing startup..."
-            fi
-            
+            php artisan migrate --force 2>&1 || echo "⚠️  Migration warning (continuing anyway)"
             echo ""
+            
             echo "Creating super admin accounts..."
-            if php artisan setup:create-super-admins 2>&1; then
-                echo "✓ Super admin accounts setup complete"
-            else
-                echo "⚠️  Super admin creation had issues"
-            fi
+            php artisan setup:create-super-admins 2>&1 || echo "⚠️  Super admin setup warning"
+            echo ""
             break
         fi
         
-        if [ $((i % 10)) -eq 0 ]; then
-            echo "Waiting for database... ($i/60 seconds)"
+        COUNTER=$((COUNTER + 1))
+        if [ $((COUNTER % 15)) -eq 0 ]; then
+            echo "Waiting for DB... ${COUNTER}s"
         fi
         sleep 1
     done
+else
+    echo "Database configuration incomplete, skipping migrations"
 fi
 
-echo ""
-echo "Clearing caches..."
-php artisan cache:clear
-php artisan config:clear
-php artisan route:clear
-php artisan view:clear
-
-echo "Creating storage link..."
-php artisan storage:link || true
-
-echo "Setting permissions..."
-chown -R www-data:www-data /app/backend
-chmod -R 775 /app/backend/storage /app/backend/bootstrap/cache
+echo "Clearing application cache..."
+rm -rf /app/backend/bootstrap/cache/* 2>/dev/null || true
+php artisan cache:clear 2>&1 || true
+php artisan config:clear 2>&1 || true
+php artisan route:clear 2>&1 || true
 
 echo ""
-echo "✓ Starting supervisor..."
+echo "✓ Startup complete, starting services..."
 echo "============================================"
 echo ""
 
 exec /usr/bin/supervisord -c /etc/supervisord.conf
+

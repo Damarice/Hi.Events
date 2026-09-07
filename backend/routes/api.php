@@ -1,5 +1,6 @@
 <?php
 
+use HiEvents\Http\Actions\Status\StatusAction;
 use HiEvents\Http\Actions\Health\HealthCheckAction;
 use HiEvents\Http\Actions\Accounts\CreateAccountAction;
 use HiEvents\Http\Actions\Accounts\DeletionRequest\CancelAccountDeletionAction;
@@ -268,6 +269,9 @@ use Illuminate\Routing\Router;
 
 /** @var Router|Router $router */
 $router = app()->get('router');
+
+// Public routes - no middleware
+$router->get('/status', StatusAction::class);
 
 // Health check - accessible without auth
 $router->get('/health', HealthCheckAction::class);
