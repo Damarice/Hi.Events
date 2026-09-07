@@ -24,17 +24,14 @@ ENV NODE_ENV=production
 RUN echo "Installing frontend dependencies..." && \
     yarn install --network-timeout 600000 --frozen-lockfile && \
     echo "✓ Frontend dependencies installed" && \
-    echo "Building frontend (messages:extract)..." && \
-    npx lingui extract && \
+    echo "Building frontend..." && \
+    yarn run messages:extract && \
     echo "✓ Messages extracted" && \
-    echo "Building frontend (messages:compile)..." && \
-    npx lingui compile && \
+    yarn run messages:compile && \
     echo "✓ Messages compiled" && \
-    echo "Building frontend (client bundle)..." && \
-    npx vite build --ssrManifest --outDir dist/client && \
+    yarn run build:ssr:client && \
     echo "✓ Client bundle built" && \
-    echo "Building frontend (server bundle)..." && \
-    npx vite build --ssr src/entry.server.tsx --outDir dist/server && \
+    yarn run build:ssr:server && \
     echo "✓ Server bundle built" && \
     echo "✓ Frontend build completed successfully" && \
     if [ -d "dist" ]; then \
