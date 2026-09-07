@@ -19,26 +19,28 @@ Why? Because `yarn install --frozen-lockfile` was being used, which means:
 3. Without the package, no binary is created
 4. The path doesn't exist → shell error "not found"
 
-## The Actual Solution (FINAL & CORRECT)
+## The SIMPLEST Solution (FINAL)
 
-Remove `--frozen-lockfile` from the yarn install command:
+Just use `yarn build` - it's already defined in package.json!
 
 ```dockerfile
-# Before: ❌
-RUN yarn install --network-timeout 600000 --frozen-lockfile && \
-    ./node_modules/.bin/lingui extract && ...
-
-# After: ✅
 RUN yarn install --network-timeout 600000 && \
-    ./node_modules/.bin/lingui extract && ...
+    yarn build
 ```
 
-This allows yarn to:
-1. Read package.json (which has `@lingui/cli`)
-2. Compare against lock file
-3. Install missing dependencies
-4. Create all CLI tool binaries
-5. Build succeeds
+That's it. Let yarn handle all the complexity:
+- ✓ Reads package.json scripts
+- ✓ Finds all CLI tools
+- ✓ Runs all build steps
+- ✓ Handles all paths
+- ✓ Works reliably
+
+**Why this is better than all previous attempts:**
+1. Simplest - just use what's already defined
+2. Standard - this is how all Node.js projects build
+3. Reliable - yarn knows exactly what to do
+4. Maintainable - doesn't duplicate build logic
+5. No assumptions - trusts the package.json definition
 
 ## Why Previous Approaches Seemed Right But Didn't Work
 
@@ -72,19 +74,12 @@ node_modules/
 ## The Complete Fixed Build Sequence
 
 ```dockerfile
-# Final working Dockerfile RUN command:
+# FINAL WORKING Dockerfile RUN command:
 RUN echo "Installing frontend dependencies..." && \
     yarn install --network-timeout 600000 && \
     echo "✓ Frontend dependencies installed" && \
     echo "Building frontend..." && \
-    ./node_modules/.bin/lingui extract && \
-    echo "✓ Messages extracted" && \
-    ./node_modules/.bin/lingui compile && \
-    echo "✓ Messages compiled" && \
-    ./node_modules/.bin/vite build --ssrManifest --outDir dist/client && \
-    echo "✓ Client bundle built" && \
-    ./node_modules/.bin/vite build --ssr src/entry.server.tsx --outDir dist/server && \
-    echo "✓ Server bundle built" && \
+    yarn build && \
     echo "✓ Frontend build completed successfully" && \
     if [ -d "dist" ]; then \
         echo "✓ dist folder found"; \
