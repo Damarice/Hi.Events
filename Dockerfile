@@ -27,13 +27,13 @@ RUN echo "Installing frontend dependencies..." && \
     yarn install --network-timeout 600000 --frozen-lockfile && \
     echo "✓ Frontend dependencies installed" && \
     echo "Building frontend..." && \
-    yarn run messages:extract && \
+    ./node_modules/.bin/lingui extract && \
     echo "✓ Messages extracted" && \
-    yarn run messages:compile && \
+    ./node_modules/.bin/lingui compile && \
     echo "✓ Messages compiled" && \
-    yarn run build:ssr:client && \
+    ./node_modules/.bin/vite build --ssrManifest --outDir dist/client && \
     echo "✓ Client bundle built" && \
-    yarn run build:ssr:server && \
+    ./node_modules/.bin/vite build --ssr src/entry.server.tsx --outDir dist/server && \
     echo "✓ Server bundle built" && \
     echo "✓ Frontend build completed successfully" && \
     if [ -d "dist" ]; then \
