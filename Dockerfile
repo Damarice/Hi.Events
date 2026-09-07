@@ -20,6 +20,8 @@ ARG VITE_API_URL_SERVER=http://127.0.0.1/api
 ENV VITE_API_URL_CLIENT=$VITE_API_URL_CLIENT
 ENV VITE_API_URL_SERVER=$VITE_API_URL_SERVER
 ENV NODE_ENV=production
+# Ensure node_modules/.bin is in PATH for yarn scripts
+ENV PATH="/app/frontend/node_modules/.bin:$PATH"
 
 RUN echo "Installing frontend dependencies..." && \
     yarn install --network-timeout 600000 --frozen-lockfile && \
