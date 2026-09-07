@@ -16,6 +16,12 @@ services:
         value: "stack"
       - key: MAIL_MAILER
         value: "log"
+      - key: APP_SAAS_MODE_ENABLED
+        value: "true"
+      - key: VITE_API_URL_CLIENT
+        value: "https://hi-events-g3dx.onrender.com/api"
+      - key: VITE_API_URL_SERVER
+        value: "http://127.0.0.1/api"
       - key: DB_CONNECTION
         value: "pgsql"
       - key: DB_HOST
