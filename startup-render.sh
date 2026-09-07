@@ -7,6 +7,17 @@ echo "🚀 Hi.Events Startup Script"
 echo "============================================"
 echo ""
 
+# Set permissions FIRST before anything else
+echo "Setting permissions..."
+mkdir -p /app/backend/storage/logs
+mkdir -p /app/backend/bootstrap/cache
+chown -R www-data:www-data /app/backend/storage
+chown -R www-data:www-data /app/backend/bootstrap
+chmod -R 777 /app/backend/storage
+chmod -R 777 /app/backend/bootstrap/cache
+echo "✓ Permissions set"
+echo ""
+
 # Load environment
 export $(cat /app/backend/.env 2>/dev/null | grep -v '#' | xargs) 2>/dev/null || true
 
@@ -52,6 +63,9 @@ rm -rf /app/backend/bootstrap/cache/* 2>/dev/null || true
 php artisan cache:clear 2>&1 || true
 php artisan config:clear 2>&1 || true
 php artisan route:clear 2>&1 || true
+
+echo "Creating storage link..."
+php artisan storage:link 2>&1 || true
 
 echo ""
 echo "✓ Startup complete, starting services..."
