@@ -19,28 +19,55 @@ Why? Because `yarn install --frozen-lockfile` was being used, which means:
 3. Without the package, no binary is created
 4. The path doesn't exist → shell error "not found"
 
-## The SIMPLEST Solution (FINAL)
+## API 404 Errors - Root Cause & Fix
 
-Just use `yarn build` - it's already defined in package.json!
+### The Problem
+Frontend was receiving 404 errors on API calls:
+- `POST /api/auth/register` → 404 Not Found
+- `POST /api/auth/login` → 404 Not Found
 
-```dockerfile
-RUN yarn install --network-timeout 600000 && \
-    yarn build
+### Root Cause Identified
+The nginx regex for API routing was **too restrictive**:
+
+**Bad regex:**
+```nginx
+location ~* ^/api(/|$) {
 ```
 
-That's it. Let yarn handle all the complexity:
-- ✓ Reads package.json scripts
-- ✓ Finds all CLI tools
-- ✓ Runs all build steps
-- ✓ Handles all paths
-- ✓ Works reliably
+This regex means: "Match `/api` followed by either `/` OR end-of-string"
+- ✓ Matches: `/api/` or `/api`
+- ✗ Doesn't match: `/api/auth/register` (there's `/auth` after `/api`, not just `/`)
 
-**Why this is better than all previous attempts:**
-1. Simplest - just use what's already defined
-2. Standard - this is how all Node.js projects build
-3. Reliable - yarn knows exactly what to do
-4. Maintainable - doesn't duplicate build logic
-5. No assumptions - trusts the package.json definition
+So requests to `/api/auth/register` didn't match this location block and fell through to the default `/` handler, which tried to route them to the frontend SSR server (not the PHP backend), resulting in 404.
+
+### The Fix
+Changed nginx routing regex to:
+
+```nginx
+location ~ ^/api {
+```
+
+This means: "Match anything starting with `/api`"
+- ✓ Matches: `/api/`, `/api/auth/register`, `/api/events`, etc.
+- ✓ Case-sensitive (no `*` flag) - correct for API paths
+
+### What Changed
+1. **docker/all-in-one/nginx/nginx.conf** (commit dfbe595)
+   - Line 51: `location ~* ^/api(/|$)` → `location ~ ^/api`
+   
+2. **render.yaml** (commit 1421415)
+   - Removed duplicate `CACHE_DRIVER` entry
+   - Fixed Redis references from `fromService` to `fromDatabase`
+
+### Expected Behavior After Fix
+API requests will now:
+1. Match the `/api` location block
+2. Rewrite to `/index.php$is_args$args`
+3. Route to PHP-FPM (`fastcgi_pass php_backend`)
+4. Laravel handles the request
+5. Returns proper response (not 404)
+
+---
 
 ## Why Previous Approaches Seemed Right But Didn't Work
 
