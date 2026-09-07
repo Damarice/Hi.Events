@@ -18,6 +18,20 @@ chmod -R 777 /app/backend/bootstrap/cache
 echo "✓ Permissions set"
 echo ""
 
+# Check if frontend dist exists
+echo "Checking frontend build..."
+if [ -d "/app/frontend/dist" ]; then
+    echo "✓ Frontend dist directory exists"
+    echo "  Client build: $([ -d "/app/frontend/dist/client" ] && echo 'YES' || echo 'NO')"
+    echo "  Server build: $([ -d "/app/frontend/dist/server" ] && echo 'YES' || echo 'NO')"
+    if [ -f "/app/frontend/dist/client/index.html" ]; then
+        echo "  index.html size: $(wc -c < /app/frontend/dist/client/index.html) bytes"
+    fi
+else
+    echo "✗ Frontend dist directory NOT FOUND - frontend build may have failed!"
+fi
+echo ""
+
 # Load environment
 export $(cat /app/backend/.env 2>/dev/null | grep -v '#' | xargs) 2>/dev/null || true
 
