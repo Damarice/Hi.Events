@@ -59,17 +59,17 @@ services:
           name: postgres
           property: password
       - key: REDIS_HOST
-        fromService:
+        fromDatabase:
           name: redis
           property: host
       - key: REDIS_PORT
-        fromService:
+        fromDatabase:
           name: redis
           property: port
       - key: REDIS_PASSWORD
-        value: ""
-      - key: CACHE_DRIVER
-        value: "redis"
+        fromDatabase:
+          name: redis
+          property: password
       - key: QUEUE_CONNECTION
         value: "redis"
 
