@@ -24,7 +24,7 @@ ENV NODE_ENV=production
 ENV PATH="/app/frontend/node_modules/.bin:$PATH"
 
 RUN echo "Installing frontend dependencies..." && \
-    yarn install --network-timeout 600000 --frozen-lockfile && \
+    yarn install --network-timeout 600000 && \
     echo "✓ Frontend dependencies installed" && \
     echo "Building frontend..." && \
     ./node_modules/.bin/lingui extract && \
