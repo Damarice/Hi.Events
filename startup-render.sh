@@ -27,8 +27,15 @@ if [ -d "/app/frontend/dist" ]; then
     if [ -f "/app/frontend/dist/client/index.html" ]; then
         echo "  index.html size: $(wc -c < /app/frontend/dist/client/index.html) bytes"
     fi
+    if [ -d "/app/frontend/dist/client/assets" ]; then
+        echo "  Assets found: $(ls -1 /app/frontend/dist/client/assets 2>/dev/null | wc -l) files"
+        echo "  Asset samples:"
+        ls -1 /app/frontend/dist/client/assets 2>/dev/null | head -5 | sed 's/^/    - /'
+    fi
 else
     echo "✗ Frontend dist directory NOT FOUND - frontend build may have failed!"
+    echo "  Frontend directory contents:"
+    ls -la /app/frontend/ | head -20
 fi
 echo ""
 
@@ -84,6 +91,17 @@ php artisan storage:link 2>&1 || true
 echo ""
 echo "✓ Startup complete, starting services..."
 echo "============================================"
+echo ""
+echo "Services starting:"
+echo "  - Nginx (port 80)"
+echo "  - PHP-FPM (port 9000)"
+echo "  - Node.js SSR server (port 5678)"
+echo "  - Laravel queue worker"
+echo "  - Laravel scheduler"
+echo ""
+echo "Application URLs:"
+echo "  - Frontend: https://hi-events-g3dx.onrender.com"
+echo "  - API: https://hi-events-g3dx.onrender.com/api"
 echo ""
 
 exec /usr/bin/supervisord -c /etc/supervisord.conf

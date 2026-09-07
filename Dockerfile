@@ -19,8 +19,22 @@ ARG VITE_API_URL_SERVER=http://127.0.0.1/api
 
 ENV VITE_API_URL_CLIENT=$VITE_API_URL_CLIENT
 ENV VITE_API_URL_SERVER=$VITE_API_URL_SERVER
+ENV NODE_ENV=production
 
-RUN yarn install --network-timeout 600000 --frozen-lockfile && yarn build
+RUN echo "Installing frontend dependencies..." && \
+    yarn install --network-timeout 600000 --frozen-lockfile && \
+    echo "Building frontend..." && \
+    yarn build 2>&1 && \
+    echo "✓ Frontend build completed successfully" && \
+    if [ -d "dist" ]; then \
+        echo "✓ dist folder found"; \
+        ls -lah dist/; \
+        if [ -d "dist/client" ]; then echo "✓ dist/client found"; ls -lah dist/client/ | head -20; else echo "✗ dist/client NOT found"; fi; \
+        if [ -d "dist/server" ]; then echo "✓ dist/server found"; ls -lah dist/server/ | head -10; else echo "✗ dist/server NOT found"; fi; \
+    else \
+        echo "✗ dist folder NOT found after build - build may have failed!"; \
+        exit 1; \
+    fi
 
 # Use stable multi-arch serversideup/php image
 FROM serversideup/php:8.5-fpm-alpine

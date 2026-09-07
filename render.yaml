@@ -22,6 +22,16 @@ services:
         value: "log"
       - key: APP_SAAS_MODE_ENABLED
         value: "true"
+      - key: APP_DISABLE_REGISTRATION
+        value: "false"
+      - key: LOG_LEVEL
+        value: "warning"
+      - key: QUEUE_DRIVER
+        value: "redis"
+      - key: CACHE_DRIVER
+        value: "redis"
+      - key: FILESYSTEM_DISK
+        value: "local"
       - key: VITE_API_URL_CLIENT
         value: "https://hi-events-g3dx.onrender.com/api"
       - key: VITE_API_URL_SERVER
