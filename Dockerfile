@@ -23,14 +23,25 @@ ENV NODE_ENV=production
 
 RUN echo "Installing frontend dependencies..." && \
     yarn install --network-timeout 600000 --frozen-lockfile && \
-    echo "Building frontend..." && \
-    yarn build 2>&1 && \
+    echo "✓ Frontend dependencies installed" && \
+    echo "Building frontend (messages:extract)..." && \
+    npx lingui extract && \
+    echo "✓ Messages extracted" && \
+    echo "Building frontend (messages:compile)..." && \
+    npx lingui compile && \
+    echo "✓ Messages compiled" && \
+    echo "Building frontend (client bundle)..." && \
+    npx vite build --ssrManifest --outDir dist/client && \
+    echo "✓ Client bundle built" && \
+    echo "Building frontend (server bundle)..." && \
+    npx vite build --ssr src/entry.server.tsx --outDir dist/server && \
+    echo "✓ Server bundle built" && \
     echo "✓ Frontend build completed successfully" && \
     if [ -d "dist" ]; then \
         echo "✓ dist folder found"; \
         ls -lah dist/; \
-        if [ -d "dist/client" ]; then echo "✓ dist/client found"; ls -lah dist/client/ | head -20; else echo "✗ dist/client NOT found"; fi; \
-        if [ -d "dist/server" ]; then echo "✓ dist/server found"; ls -lah dist/server/ | head -10; else echo "✗ dist/server NOT found"; fi; \
+        if [ -d "dist/client" ]; then echo "✓ dist/client found - $(find dist/client -type f | wc -l) files"; else echo "✗ dist/client NOT found"; exit 1; fi; \
+        if [ -d "dist/server" ]; then echo "✓ dist/server found - $(find dist/server -type f | wc -l) files"; else echo "✗ dist/server NOT found"; exit 1; fi; \
     else \
         echo "✗ dist folder NOT found after build - build may have failed!"; \
         exit 1; \
