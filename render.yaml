@@ -8,6 +8,10 @@ services:
         generateValue: true
       - key: JWT_SECRET
         generateValue: true
+      - key: JWT_ALGO
+        value: "HS256"
+      - key: JWT_TTL
+        value: "604800"
       - key: APP_DEBUG
         value: "false"
       - key: APP_ENV

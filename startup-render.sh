@@ -16,6 +16,12 @@ echo "  DB_DATABASE: ${DB_DATABASE:-not set}"
 echo "  DB_USERNAME: ${DB_USERNAME:-not set}"
 echo ""
 
+echo "JWT Configuration:"
+echo "  JWT_ALGO: ${JWT_ALGO:-not set}"
+echo "  JWT_SECRET: $([ -z "$JWT_SECRET" ] && echo 'not set' || echo 'SET')"
+echo "  JWT_TTL: ${JWT_TTL:-not set}"
+echo ""
+
 # Check if database variables are set
 if [ -z "$DB_HOST" ] || [ -z "$DB_DATABASE" ]; then
     echo "⚠️  Database environment variables not configured!"
@@ -39,7 +45,7 @@ else
             
             echo ""
             echo "Running migrations..."
-            if php artisan migrate --force; then
+            if php artisan migrate --force 2>&1; then
                 echo "✓ Migrations completed successfully"
             else
                 echo "⚠️  Migrations had issues but continuing startup..."
@@ -47,7 +53,11 @@ else
             
             echo ""
             echo "Creating super admin accounts..."
-            php artisan setup:create-super-admins
+            if php artisan setup:create-super-admins 2>&1; then
+                echo "✓ Super admin accounts setup complete"
+            else
+                echo "⚠️  Super admin creation had issues"
+            fi
             break
         fi
         
