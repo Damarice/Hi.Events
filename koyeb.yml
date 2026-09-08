@@ -1,0 +1,138 @@
+# Koyeb deployment configuration for Hi.Events
+# Deploy full-stack app (Frontend SSR + Backend API + Database) for FREE
+
+apiVersion: 1.0
+kind: Service
+metadata:
+  name: hi-events
+  displayName: Hi.Events Ticketing Platform
+
+spec:
+  # Docker build configuration
+  build:
+    dockerfile: Dockerfile.koyeb
+    buildCommand: ""
+
+  # Port exposure
+  ports:
+    - name: http
+      protocol: http
+      port: 80
+
+  # Environment variables
+  env:
+    # Application
+    - name: APP_NAME
+      value: Hi.Events
+    - name: APP_ENV
+      value: production
+    - name: APP_DEBUG
+      value: "false"
+    - name: APP_SAAS_MODE_ENABLED
+      value: "true"
+    - name: APP_DISABLE_REGISTRATION
+      value: "false"
+
+    # Logging
+    - name: LOG_CHANNEL
+      value: stack
+    - name: LOG_LEVEL
+      value: warning
+
+    # Cache & Queue
+    - name: CACHE_DRIVER
+      value: redis
+    - name: QUEUE_DRIVER
+      value: redis
+    - name: QUEUE_CONNECTION
+      value: redis
+    - name: FILESYSTEM_DISK
+      value: local
+
+    # Database
+    - name: DB_CONNECTION
+      value: pgsql
+    - name: DB_HOST
+      value: localhost
+    - name: DB_PORT
+      value: "5432"
+    - name: DB_DATABASE
+      value: hi_events
+    - name: DB_USERNAME
+      value: hi_events
+    - name: DB_PASSWORD
+      secret: DB_PASSWORD
+
+    # Redis
+    - name: REDIS_HOST
+      value: localhost
+    - name: REDIS_PORT
+      value: "6379"
+    - name: REDIS_PASSWORD
+      value: ""
+
+    # API URLs (replace with your Koyeb app URL after deployment)
+    - name: VITE_API_URL_CLIENT
+      value: "https://hi-events.koyeb.app/api"
+    - name: VITE_API_URL_SERVER
+      value: "http://localhost/api"
+
+    # Mail
+    - name: MAIL_MAILER
+      value: log
+
+    # JWT
+    - name: JWT_ALGO
+      value: HS256
+    - name: JWT_TTL
+      value: "604800"
+    - name: JWT_SECRET
+      secret: JWT_SECRET
+
+    # Laravel
+    - name: APP_KEY
+      secret: APP_KEY
+
+  # Health checks
+  healthChecks:
+    - name: http
+      type: http
+      initialDelay: 30
+      period: 15
+      timeout: 5
+      threshold: 3
+      path: /
+
+  # Scaling (free tier: 1 instance)
+  scaling:
+    minInstances: 1
+    maxInstances: 1
+
+  # Resources (free tier optimized)
+  resources:
+    requests:
+      cpu: 500m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+---
+# PostgreSQL addon configuration
+kind: PostgreSQL
+metadata:
+  name: hi-events-db
+
+spec:
+  version: "15"
+  disk: 5Gi  # 5GB free tier
+  
+---
+# Redis addon configuration  
+kind: Redis
+metadata:
+  name: hi-events-cache
+
+spec:
+  version: "7"
+  memory: 256Mi  # Free tier Redis

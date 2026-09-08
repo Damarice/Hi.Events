@@ -1,0 +1,169 @@
+# Koyeb-optimized all-in-one Dockerfile
+# Simpler, more reliable setup for serverless container deployment
+
+FROM node:22-alpine AS node-frontend
+
+WORKDIR /app/frontend
+
+RUN apk add --no-cache yarn
+
+RUN yarn config set network-timeout 600000
+
+COPY ./frontend/package.json ./frontend/yarn.lock ./
+COPY ./frontend .
+COPY ./VERSION /app/VERSION
+
+ENV VITE_API_URL_CLIENT=https://$KOYEB_INSTANCE_NAME.koyeb.app/api
+ENV VITE_API_URL_SERVER=http://localhost/api
+ENV NODE_ENV=production
+
+RUN yarn install --network-timeout 600000 --prod false && \
+    yarn build && \
+    echo "✓ Frontend build complete"
+
+# PHP-FPM base
+FROM php:8.5-fpm-alpine
+
+# Install extensions and tools
+RUN apk add --no-cache \
+    nginx \
+    supervisor \
+    postgresql-client \
+    redis \
+    curl \
+    git \
+    composer \
+    libpng-dev \
+    libjpeg-turbo-dev \
+    libwebp-dev \
+    && docker-php-ext-install \
+    pdo \
+    pdo_pgsql \
+    gd \
+    intl \
+    opcache \
+    && rm -rf /var/cache/apk/*
+
+# Copy frontend from build
+COPY --from=node-frontend /app/frontend /app/frontend
+
+# Copy backend
+COPY ./backend /app/backend
+COPY ./VERSION /app/backend/VERSION
+
+# Backend setup
+WORKDIR /app/backend
+
+RUN mkdir -p \
+    bootstrap/cache \
+    storage/logs \
+    storage/app/public && \
+    chmod -R 777 bootstrap/cache storage && \
+    composer install \
+    --no-dev \
+    --no-interaction \
+    --optimize-autoloader \
+    --prefer-dist \
+    --ignore-platform-reqs
+
+# Configure PHP-FPM for TCP
+RUN echo "listen = 0.0.0.0:9000" > /usr/local/etc/php-fpm.d/zz-docker.conf && \
+    echo "access.log = /proc/self/fd/2" >> /usr/local/etc/php-fpm.d/zz-docker.conf && \
+    echo "clear_env = no" >> /usr/local/etc/php-fpm.d/zz-docker.conf
+
+# PHP-FPM optimization
+RUN echo "pm = dynamic" > /usr/local/etc/php-fpm.d/zz-koyeb.conf && \
+    echo "pm.max_children = 5" >> /usr/local/etc/php-fpm.d/zz-koyeb.conf && \
+    echo "pm.start_servers = 1" >> /usr/local/etc/php-fpm.d/zz-koyeb.conf && \
+    echo "pm.min_spare_servers = 1" >> /usr/local/etc/php-fpm.d/zz-koyeb.conf && \
+    echo "pm.max_spare_servers = 3" >> /usr/local/etc/php-fpm.d/zz-koyeb.conf && \
+    echo "pm.max_requests = 500" >> /usr/local/etc/php-fpm.d/zz-koyeb.conf
+
+# PHP.ini for production
+RUN echo "error_log = /proc/self/fd/2" >> /usr/local/etc/php.ini && \
+    echo "log_errors = On" >> /usr/local/etc/php.ini && \
+    echo "display_errors = Off" >> /usr/local/etc/php.ini && \
+    echo "opcache.enable = 1" >> /usr/local/etc/php.ini && \
+    echo "opcache.revalidate_freq = 0" >> /usr/local/etc/php.ini
+
+# Nginx config for Koyeb
+RUN mkdir -p /etc/nginx/conf.d
+
+COPY ./docker/all-in-one/nginx/nginx.conf /etc/nginx/nginx.conf
+
+# Startup script
+RUN echo '#!/bin/sh' > /startup-koyeb.sh && \
+    echo 'set -e' >> /startup-koyeb.sh && \
+    echo '' >> /startup-koyeb.sh && \
+    echo 'echo "=========================================="' >> /startup-koyeb.sh && \
+    echo 'echo "🚀 Hi.Events on Koyeb - Starting"' >> /startup-koyeb.sh && \
+    echo 'echo "=========================================="' >> /startup-koyeb.sh && \
+    echo '' >> /startup-koyeb.sh && \
+    echo 'cd /app/backend' >> /startup-koyeb.sh && \
+    echo '' >> /startup-koyeb.sh && \
+    echo 'echo "Setting up database..."' >> /startup-koyeb.sh && \
+    echo 'php artisan migrate --force 2>&1 || true' >> /startup-koyeb.sh && \
+    echo 'php artisan setup:create-super-admins 2>&1 || true' >> /startup-koyeb.sh && \
+    echo '' >> /startup-koyeb.sh && \
+    echo 'echo "Clearing caches..."' >> /startup-koyeb.sh && \
+    echo 'php artisan cache:clear 2>&1 || true' >> /startup-koyeb.sh && \
+    echo 'php artisan config:clear 2>&1 || true' >> /startup-koyeb.sh && \
+    echo 'php artisan route:clear 2>&1 || true' >> /startup-koyeb.sh && \
+    echo '' >> /startup-koyeb.sh && \
+    echo 'echo "Creating storage link..."' >> /startup-koyeb.sh && \
+    echo 'php artisan storage:link 2>&1 || true' >> /startup-koyeb.sh && \
+    echo '' >> /startup-koyeb.sh && \
+    echo 'echo ""' >> /startup-koyeb.sh && \
+    echo 'echo "✓ Startup complete!"' >> /startup-koyeb.sh && \
+    echo 'echo ""' >> /startup-koyeb.sh && \
+    echo '' >> /startup-koyeb.sh && \
+    echo 'exec /usr/bin/supervisord -c /etc/supervisord.conf' >> /startup-koyeb.sh && \
+    chmod +x /startup-koyeb.sh
+
+# Supervisor config for Koyeb
+RUN echo '[supervisord]' > /etc/supervisord.conf && \
+    echo 'nodaemon=true' >> /etc/supervisord.conf && \
+    echo 'logfile=/dev/stdout' >> /etc/supervisord.conf && \
+    echo 'logfile_maxbytes=0' >> /etc/supervisord.conf && \
+    echo '' >> /etc/supervisord.conf && \
+    echo '[program:nginx]' >> /etc/supervisord.conf && \
+    echo 'command=/usr/sbin/nginx -g "daemon off;"' >> /etc/supervisord.conf && \
+    echo 'autostart=true' >> /etc/supervisord.conf && \
+    echo 'autorestart=true' >> /etc/supervisord.conf && \
+    echo 'stdout_logfile=/dev/stdout' >> /etc/supervisord.conf && \
+    echo 'stderr_logfile=/dev/stderr' >> /etc/supervisord.conf && \
+    echo 'stdout_logfile_maxbytes=0' >> /etc/supervisord.conf && \
+    echo 'priority=998' >> /etc/supervisord.conf && \
+    echo '' >> /etc/supervisord.conf && \
+    echo '[program:php-fpm]' >> /etc/supervisord.conf && \
+    echo 'command=/usr/local/sbin/php-fpm -F --nodaemonize' >> /etc/supervisord.conf && \
+    echo 'autostart=true' >> /etc/supervisord.conf && \
+    echo 'autorestart=true' >> /etc/supervisord.conf && \
+    echo 'stdout_logfile=/dev/stdout' >> /etc/supervisord.conf && \
+    echo 'stderr_logfile=/dev/stderr' >> /etc/supervisord.conf && \
+    echo 'stdout_logfile_maxbytes=0' >> /etc/supervisord.conf && \
+    echo 'priority=999' >> /etc/supervisord.conf && \
+    echo '' >> /etc/supervisord.conf && \
+    echo '[program:laravel-queue]' >> /etc/supervisord.conf && \
+    echo 'command=php /app/backend/artisan queue:work --sleep=3 --tries=3 --timeout=60' >> /etc/supervisord.conf && \
+    echo 'autostart=true' >> /etc/supervisord.conf && \
+    echo 'autorestart=true' >> /etc/supervisord.conf && \
+    echo 'stdout_logfile=/dev/stdout' >> /etc/supervisord.conf && \
+    echo 'stderr_logfile=/dev/stderr' >> /etc/supervisord.conf && \
+    echo 'stdout_logfile_maxbytes=0' >> /etc/supervisord.conf && \
+    echo 'user=www-data' >> /etc/supervisord.conf && \
+    echo '' >> /etc/supervisord.conf && \
+    echo '[program:laravel-scheduler]' >> /etc/supervisord.conf && \
+    echo 'command=/bin/sh -c "while true; do php /app/backend/artisan schedule:run; sleep 60; done"' >> /etc/supervisord.conf && \
+    echo 'autostart=true' >> /etc/supervisord.conf && \
+    echo 'autorestart=true' >> /etc/supervisord.conf && \
+    echo 'stdout_logfile=/dev/stdout' >> /etc/supervisord.conf && \
+    echo 'stderr_logfile=/dev/stderr' >> /etc/supervisord.conf && \
+    echo 'stdout_logfile_maxbytes=0' >> /etc/supervisord.conf && \
+    echo 'user=www-data' >> /etc/supervisord.conf
+
+EXPOSE 80
+
+WORKDIR /app
+
+CMD ["/startup-koyeb.sh"]
