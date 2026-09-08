@@ -3,7 +3,10 @@
   "outputDirectory": "frontend/dist/client",
   "framework": "vite",
   "env": {
-    "VITE_API_URL_CLIENT": "https://hi-events-seven.vercel.app/api",
-    "VITE_API_URL_SERVER": "http://localhost:3000/api"
+    "VITE_API_URL_CLIENT": "https://hi-events-ten.vercel.app/api",
+    "VITE_API_URL_SERVER": "http://localhost:3000/api",
+    "SUPABASE_URL": "@supabase_url",
+    "SUPABASE_ANON_KEY": "@supabase_anon_key",
+    "JWT_SECRET": "@jwt_secret"
   }
 }
