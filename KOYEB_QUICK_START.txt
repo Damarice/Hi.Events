@@ -1,0 +1,132 @@
+╔════════════════════════════════════════════════════════════════════════════════╗
+║                    HI.EVENTS - KOYEB QUICK START GUIDE                        ║
+║                         Deploy in 5 Minutes FREE                              ║
+╚════════════════════════════════════════════════════════════════════════════════╝
+
+STEP 1: CREATE KOYEB ACCOUNT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. Go to: https://www.koyeb.com
+2. Click "Sign Up"
+3. Choose "Sign up with GitHub"
+4. Authorize Koyeb
+5. Verify email
+
+
+STEP 2: DEPLOY HI.EVENTS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. Click "Create Service" in Koyeb dashboard
+2. Choose "Docker"
+3. Select "GitHub" → Choose "Hi.Events" repository
+4. Select branch: "master"
+5. Dockerfile: "Dockerfile.koyeb"
+6. Click "Continue"
+
+
+STEP 3: ADD SECRETS (IMPORTANT!)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Before deploying, you MUST generate and add these secrets:
+
+Generate APP_KEY:
+  $ cd backend
+  $ php artisan key:generate --show
+  (Copy the value starting with "base64:")
+
+Generate JWT_SECRET:
+  $ openssl rand -hex 32
+  (Or: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))")
+
+Generate DB_PASSWORD:
+  Any strong password, e.g.: "SecurePass123!@#XyZ"
+
+In Koyeb:
+  1. Click "Env variables" → "Add secret"
+  2. Add:
+     - APP_KEY = (value from php artisan key:generate)
+     - JWT_SECRET = (value from openssl rand)
+     - DB_PASSWORD = (any strong password)
+
+
+STEP 4: DEPLOY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. Click "Deploy"
+2. Wait 10-15 minutes (first build is slow)
+3. You'll get a URL like: https://hi-events-xxxxx.koyeb.app
+
+
+STEP 5: UPDATE CONFIGURATION (IMPORTANT!)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+After deployment completes:
+
+1. In Koyeb service settings, click "Edit"
+2. In Env variables, update:
+   VITE_API_URL_CLIENT = https://hi-events-xxxxx.koyeb.app/api
+   (Replace xxxxx with your actual Koyeb URL)
+
+3. Click "Save" → "Redeploy latest"
+4. Wait 2-3 minutes
+
+
+STEP 6: TEST IT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. Open: https://hi-events-xxxxx.koyeb.app
+2. You should see the login page
+3. Click "Sign Up"
+4. Try to register a new account
+5. If it works → SUCCESS! ✅
+
+
+TROUBLESHOOTING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+API returns 404:
+  → Check VITE_API_URL_CLIENT matches your Koyeb URL
+  → Redeploy after updating
+
+Application won't start:
+  → Check Logs tab in Koyeb
+  → Verify all secrets are added (APP_KEY, JWT_SECRET, DB_PASSWORD)
+  → Try redeploying
+
+Database connection failed:
+  → Check DB_PASSWORD is correct
+  → Verify PostgreSQL addon is provisioned
+
+Deployment taking too long:
+  → First build: 10-15 minutes (normal)
+  → Check Logs for build progress
+
+
+SUPER ADMIN ACCOUNTS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+After successful deployment:
+
+Email:    flynnduerrel@gmail.com
+Password: Password123!
+
+Email:    menganyidamarice@gmail.com
+Password: Password123!
+
+Use these to test admin features.
+
+
+IMPORTANT NOTES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✓ Completely FREE - no credit card required
+✓ PostgreSQL 5GB included
+✓ Redis 256MB included
+✓ Auto SSL/HTTPS
+✓ 1 instance always running
+✓ All logs available in Koyeb dashboard
+
+⚠ Do NOT use the default Render Dockerfile
+⚠ Must use Dockerfile.koyeb for Koyeb deployment
+⚠ Secrets must be added BEFORE first deployment
+
+
+SUPPORT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Full guide: KOYEB_DEPLOYMENT.md
+GitHub: https://github.com/Damarice/Hi.Events
+Issues: https://github.com/Damarice/Hi.Events/issues
+
+
+Ready? Let's deploy! 🚀
