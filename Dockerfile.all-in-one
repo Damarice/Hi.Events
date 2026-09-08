@@ -12,7 +12,15 @@ COPY ./frontend/package.json ./frontend/yarn.lock ./
 COPY ./frontend .
 COPY ./VERSION /app/VERSION
 
-RUN yarn install --network-timeout 600000 --frozen-lockfile && yarn build
+# Build frontend with environment variables
+ARG VITE_API_URL_CLIENT=https://hi-events-g3dx.onrender.com/api
+ARG VITE_API_URL_SERVER=http://127.0.0.1/api
+
+ENV VITE_API_URL_CLIENT=$VITE_API_URL_CLIENT
+ENV VITE_API_URL_SERVER=$VITE_API_URL_SERVER
+ENV NODE_ENV=production
+
+RUN yarn install --network-timeout 600000 --prod false && yarn build
 
 # Use stable multi-arch serversideup/php image
 FROM serversideup/php:8.5-fpm-alpine
@@ -25,6 +33,9 @@ USER root
 RUN install-php-extensions intl gd
 
 RUN apk add --no-cache nodejs yarn nginx supervisor dos2unix
+
+# Configure PHP-FPM to listen on TCP port 9000 instead of socket
+RUN sed -i 's/^listen = .*/listen = 0.0.0.0:9000/' /etc/php*/php-fpm.d/www.conf || true
 
 COPY --from=node-frontend /app/frontend /app/frontend
 
