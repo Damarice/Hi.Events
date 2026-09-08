@@ -51,6 +51,9 @@ RUN install-php-extensions intl gd
 
 RUN apk add --no-cache nodejs yarn nginx supervisor dos2unix
 
+# Configure PHP-FPM to listen on TCP port 9000 instead of socket
+RUN sed -i 's/^listen = .*/listen = 0.0.0.0:9000/' /etc/php*/php-fpm.d/www.conf || true
+
 COPY --from=node-frontend /app/frontend /app/frontend
 
 COPY ./backend /app/backend
