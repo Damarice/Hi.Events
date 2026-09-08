@@ -1,0 +1,14 @@
+{
+  "buildCommand": "cd frontend && yarn install --prod false && yarn build",
+  "outputDirectory": "frontend/dist",
+  "framework": "react",
+  "env": {
+    "VITE_API_URL_CLIENT": "@vite_api_url_client",
+    "VITE_API_URL_SERVER": "@vite_api_url_server"
+  },
+  "functions": {
+    "api/**/*.ts": {
+      "runtime": "nodejs18.x"
+    }
+  }
+}
