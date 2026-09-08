@@ -12,8 +12,11 @@ COPY ./frontend/package.json ./frontend/yarn.lock ./
 COPY ./frontend .
 COPY ./VERSION /app/VERSION
 
-# Build frontend with environment variables
-# These will be set by Render during the build process
+# DEPLOYMENT: 2026-09-07 - Forced rebuild with API routing fixes
+# Frontend: yarn build with --prod false
+# Backend: Laravel API routing
+# Nginx: Exact prefix match for /api routes
+# PHP-FPM: TCP port 9000 configuration
 ARG VITE_API_URL_CLIENT=https://hi-events-g3dx.onrender.com/api
 ARG VITE_API_URL_SERVER=http://127.0.0.1/api
 
